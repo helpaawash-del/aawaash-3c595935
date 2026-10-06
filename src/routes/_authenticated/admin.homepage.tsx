@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import {
@@ -56,6 +56,7 @@ const FIELD_LABELS: Record<FieldKey, string> = {
 
 function AdminHomepageEditor() {
   const { profile } = useSession();
+  const queryClient = useQueryClient();
   const load = useServerFn(getHomepageContent);
   const save = useServerFn(saveHomepageContent);
   const { data, isLoading, refetch } = useQuery({
@@ -85,6 +86,7 @@ function AdminHomepageEditor() {
     setSaving(true);
     try {
       await save({ data: { doc } });
+      await queryClient.invalidateQueries({ queryKey: ["homepage-content"] });
       await refetch();
       toast.success("Homepage updated", { description: "Your changes are live on the public site." });
     } catch (err) {
