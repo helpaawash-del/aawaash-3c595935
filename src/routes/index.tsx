@@ -53,8 +53,9 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 
-import heroTowerTrees from "@/assets/savitri-hero-photoreal.png";
-const heroResidence = heroTowerTrees;
+import heroTowerTreesAsset from "@/assets/savitri-hero-photoreal.png.asset.json";
+const heroTowerTrees = heroTowerTreesAsset.url;
+const heroResidence = heroTowerTreesAsset.url;
 import savitriHero from "@/assets/savitri-hero.jpg.asset.json";
 import savitriFacade from "@/assets/savitri-facade.jpg.asset.json";
 import savitriRender from "@/assets/savitri-render.jpg";
@@ -71,6 +72,7 @@ import { LandingNav } from "@/components/aawash/landing/LandingNav";
 import { Splash } from "@/components/aawash/landing/Splash";
 import { Reveal } from "@/components/aawash/landing/Reveal";
 import { useReveal } from "@/hooks/useReveal";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import {
   Accordion,
   AccordionContent,
@@ -91,6 +93,14 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Aawash — Premium Real Estate, Reimagined" },
       {
         property: "og:description",
+        content:
+          "Aawash is a luxury real estate ecosystem — curated residential projects, transparent commissions, and a mobile-first dashboard for your entire team.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Aawash — Premium Real Estate, Reimagined" },
+      {
+        name: "twitter:description",
         content:
           "Aawash is a luxury real estate ecosystem — curated residential projects, transparent commissions, and a mobile-first dashboard for your entire team.",
       },
@@ -132,6 +142,12 @@ function Landing() {
   });
   const content = contentData ?? DEFAULT_HOMEPAGE;
   const on = (id: string) => content[id]?.enabled !== false;
+  useRealtimeInvalidate(
+    "homepage-public-content",
+    [{ table: "cms_global_content", filter: "key=eq.homepage" }],
+    [["homepage-content"]],
+    { pollMs: 15_000 },
+  );
 
   return (
     <HomeContentCtx.Provider value={content}>
@@ -164,6 +180,7 @@ function Landing() {
 
 function Hero() {
   const hero = useSection("hero");
+  const heroBuilding = hero.image || heroTowerTrees;
   const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
     // Skip parallax + scroll listener on small screens to keep scrolling smooth.
@@ -274,8 +291,8 @@ function Hero() {
               className="pointer-events-none absolute inset-x-6 top-6 bottom-8 rounded-[40%] bg-[radial-gradient(55%_60%_at_50%_45%,color-mix(in_oklab,var(--leaf)_18%,transparent),transparent_70%)] blur-3xl"
             />
             <img
-              src={heroTowerTrees}
-              alt="Aawash biophilic residence"
+              src={heroBuilding}
+              alt="Photorealistic Savitri Enclave residence"
               width={1024}
               height={1024}
               loading="eager"
@@ -399,8 +416,8 @@ function Hero() {
         <div className="absolute inset-x-0 bottom-0 mx-auto flex h-full max-w-5xl items-end justify-center px-4">
           <div className="relative w-[min(46vw,34rem)] xl:w-[min(40vw,38rem)]">
             <img
-              src={heroTowerTrees}
-              alt="Aawash biophilic residence"
+              src={heroBuilding}
+              alt="Photorealistic Savitri Enclave residence"
               width={1024}
               height={1024}
               loading="lazy"

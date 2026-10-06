@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getProjectFlats } from "@/lib/project-flats";
+import { pickProjectUpdateFields } from "@/lib/project-update";
 
 /**
  * Enterprise Project Management Console — admin CRUD for
@@ -180,10 +181,7 @@ export const adminUpsertProject = createServerFn({ method: "POST" })
     // Project tabs submit partial forms. Keep only fields the tab actually
     // sent so schema defaults cannot overwrite pricing, dates, visibility,
     // priority, or flat-card content owned by another tab.
-    const partial: Record<string, unknown> = { id: parsed.id };
-    for (const key of Object.keys(normalised)) {
-      if (key in parsed) partial[key] = parsed[key as keyof typeof parsed];
-    }
+    const partial: Record<string, unknown> = pickProjectUpdateFields(parsed, normalised);
     if (Object.hasOwn(normalised, "extra")) {
       partial.extra = { ...parsed.extra, flats: getProjectFlats(parsed.extra) };
     }

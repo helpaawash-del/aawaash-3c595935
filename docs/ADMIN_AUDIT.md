@@ -13,7 +13,7 @@ Gate: `_authenticated/route.tsx` (auth) + `<RoleGuard allow={["super_admin"]}>` 
 | `/admin/team-leaders/new` | ✓ | super_admin | full profile + password | Enforces 3-leader cap via `system_settings`. |
 | `/admin/team-leaders/$id` | ✓ | super_admin | 6 tabs incl. password reset | Reset routed through `team-leaders.functions.ts`. |
 | `/admin/members` | ✓ | super_admin | List + filter by team | Cache key `["members","all"]`. |
-| `/admin/members/new` | ✓ | super_admin | Login ID auto-generation | 10-per-team cap enforced server-side. |
+| `/admin/members/new` | ✓ | super_admin | Login ID auto-generation | Unlimited members; selected team must have a Team Leader. |
 | `/admin/members/$id` | ✓ | super_admin | Profile, team switch | `changeMemberTeam` invalidates both source & target caches. |
 | `/admin/customers` | ✓ | super_admin | Bulk reassign, merge | Uses `admin_merge_customers` RPC. |
 | `/admin/customers/$id` | ✓ | super_admin | 6 tabs + signed docs | Documents via short-lived signed URLs. |
@@ -45,6 +45,9 @@ Gate: `_authenticated/route.tsx` (auth) + `<RoleGuard allow={["super_admin"]}>` 
 2. **3D model fields were missing.** Added `three_d_tour_url` and `virtual_walkthrough_url` (schema + Media tab).
 3. **Admin skyline chrome.** `SkylineFrame.tsx` mounted inside `AdminShell` for a consistent light futuristic backdrop.
 4. **Playwright acceptance suite** at `tests/e2e/acceptance.spec.ts`. Public smoke always runs; role-scoped tests skip cleanly until `E2E_ADMIN_EMAIL` / `E2E_ADMIN_PASSWORD` are provided.
+5. **Project tab isolation.** Project updates now persist only fields submitted by the active tab, preventing Media or Content saves from resetting pricing, visibility, dates, priority, or Flat showcase content.
+6. **Editable homepage building.** The hero building is now a photoreal transparent Savitri Enclave cutout and can be replaced from the Homepage editor.
+7. **Profile uploads.** Team Leader and Member edit dialogs now support direct profile-photo replacement uploads.
 
 ## Verified role-visibility contract
 

@@ -36,8 +36,8 @@ export const SECTION_SPECS: SectionSpec[] = [
   {
     id: "hero",
     label: "Hero",
-    hint: "The first screen — badge pill, headline and supporting copy.",
-    fields: ["eyebrow", "title", "accent", "subtitle"],
+    hint: "The first screen — building image, badge, headline and supporting copy.",
+    fields: ["eyebrow", "title", "accent", "subtitle", "image"],
   },
   {
     id: "categories",

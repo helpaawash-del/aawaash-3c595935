@@ -33,6 +33,7 @@ import {
 } from "@/lib/members-admin.functions";
 import { adminResetPassword, setUserStatus } from "@/lib/admin.functions";
 import { ConfirmDialog } from "@/components/aawash/admin/ConfirmDialog";
+import { ImageUploadField } from "@/components/aawash/admin/MediaUploaders";
 import { toast } from "sonner";
 
 import { friendlyError } from "@/lib/error-messages";
@@ -595,7 +596,6 @@ function Content() {
               [
                 ["fullName", "Full name"],
                 ["email", "Email"],
-                ["avatarUrl", "Avatar URL"],
                 ["joiningDate", "Joining date"],
               ] as const
             ).map(([k, label]) => (
@@ -608,6 +608,13 @@ function Content() {
                 />
               </FieldRow>
             ))}
+            <ImageUploadField
+              label="Profile photo"
+              name="member-avatar"
+              value={form.avatarUrl ?? ""}
+              folder="profiles/members"
+              onChange={(avatarUrl) => setForm((current) => ({ ...current, avatarUrl }))}
+            />
             <FieldRow label="Address">
               <textarea
                 value={form.address ?? ""}
