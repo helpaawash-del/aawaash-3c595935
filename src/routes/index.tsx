@@ -96,6 +96,14 @@ export const Route = createFileRoute("/")({
         content:
           "Aawash is a luxury real estate ecosystem — curated residential projects, transparent commissions, and a mobile-first dashboard for your entire team.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Aawash — Premium Real Estate, Reimagined" },
+      {
+        name: "twitter:description",
+        content:
+          "Aawash is a luxury real estate ecosystem — curated residential projects, transparent commissions, and a mobile-first dashboard for your entire team.",
+      },
     ],
   }),
 });
