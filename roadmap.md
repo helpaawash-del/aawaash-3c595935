@@ -3,11 +3,11 @@
 - [x] Add admin project editor controls and persistence for Flats content.
 - [x] Add authenticated homepage edit and image persistence E2E coverage.
 - [x] Run typecheck, production build smoke test, and focused public verification.
-- [ ] Run authenticated homepage, Flats upload/save, and database persistence E2E coverage when a preview account is available.
+- [ ] Run authenticated homepage, Flats upload/save, and database write E2E coverage after an active admin signs in to the preview.
 - [x] Apply the white and Fern green theme across public, dashboard, and admin surfaces.
 - [x] Remove member-per-team limits while keeping exactly three Team Leader slots.
 - [x] Verify large member lists, pagination, and counts after the unlimited-member update.
 - [x] Replace the homepage hero building with a transparent photoreal Savitri Enclave façade.
 - [x] Prevent project tab saves from resetting fields owned by other tabs.
 - [x] Remove the non-persisting walkthrough poster upload control.
-- [ ] Complete authenticated admin save/upload/public persistence checks when an admin preview session is available.
+- [ ] Complete authenticated admin save/upload/public persistence checks after an active admin signs in to the preview.

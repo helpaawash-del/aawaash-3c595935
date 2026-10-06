@@ -292,7 +292,7 @@ function Hero() {
             />
             <img
               src={heroBuilding}
-              alt="Aawash biophilic residence"
+              alt="Photorealistic Savitri Enclave residence"
               width={1024}
               height={1024}
               loading="eager"
@@ -417,7 +417,7 @@ function Hero() {
           <div className="relative w-[min(46vw,34rem)] xl:w-[min(40vw,38rem)]">
             <img
               src={heroBuilding}
-              alt="Aawash biophilic residence"
+              alt="Photorealistic Savitri Enclave residence"
               width={1024}
               height={1024}
               loading="lazy"
