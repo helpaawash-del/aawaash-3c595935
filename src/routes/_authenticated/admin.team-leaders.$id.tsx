@@ -30,6 +30,7 @@ import { useSession } from "@/hooks/useSession";
 import { RoleGuard } from "@/components/aawash/AuthGuard";
 import { AdminShell } from "@/components/aawash/admin/AdminShell";
 import { ConfirmDialog } from "@/components/aawash/admin/ConfirmDialog";
+import { ImageUploadField } from "@/components/aawash/admin/MediaUploaders";
 import { getTeamLeaderDetail, updateTeamLeader } from "@/lib/team-leaders.functions";
 import { adminResetPassword, setUserStatus } from "@/lib/admin.functions";
 import { formatINR, initials } from "@/components/aawash/dashboard-kit";
@@ -784,7 +785,15 @@ function EditDialog({
           <TF label="Team name" value={f.teamName} onChange={(v) => set("teamName", v)} />
           <TF label="Email" value={f.email} onChange={(v) => set("email", v)} />
           <TF label="Joining date" type="date" value={f.joiningDate} onChange={(v) => set("joiningDate", v)} />
-          <TF label="Avatar URL" value={f.avatarUrl} onChange={(v) => set("avatarUrl", v)} className="sm:col-span-2" />
+           <div className="sm:col-span-2">
+             <ImageUploadField
+               label="Profile photo"
+               name="team-leader-avatar"
+               value={f.avatarUrl}
+               folder="profiles/team-leaders"
+               onChange={(url) => set("avatarUrl", url)}
+             />
+           </div>
           <TF label="Address" value={f.address} onChange={(v) => set("address", v)} multiline className="sm:col-span-2" />
           <TF label="Remarks" value={f.remarks} onChange={(v) => set("remarks", v)} multiline className="sm:col-span-2" />
         </div>
