@@ -53,8 +53,9 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 
-import heroTowerTrees from "@/assets/savitri-hero-photoreal.png";
-const heroResidence = heroTowerTrees;
+import heroTowerTreesAsset from "@/assets/savitri-hero-photoreal.png.asset.json";
+const heroTowerTrees = heroTowerTreesAsset.url;
+const heroResidence = heroTowerTreesAsset.url;
 import savitriHero from "@/assets/savitri-hero.jpg.asset.json";
 import savitriFacade from "@/assets/savitri-facade.jpg.asset.json";
 import savitriRender from "@/assets/savitri-render.jpg";
