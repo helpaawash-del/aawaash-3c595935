@@ -11,3 +11,6 @@
 - [x] Prevent project tab saves from resetting fields owned by other tabs.
 - [x] Remove the non-persisting walkthrough poster upload control.
 - [ ] Complete authenticated admin save/upload/public persistence checks after an active admin signs in to the preview.
+- [ ] Fix project inventory references so newly created floors appear and flats can be added per floor; verify the flow end to end.
+- [ ] Add an AI Gateway-assisted tower layout input that produces structured inventory for admin review before saving.
+- [ ] Remove the Team Leader count cap and update validation, database enforcement, lists, pagination, and dashboard counts.
