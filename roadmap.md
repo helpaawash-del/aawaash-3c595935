@@ -14,3 +14,5 @@
 - [ ] Fix project inventory references so newly created floors appear and flats can be added per floor; verify the flow end to end.
 - [ ] Add an AI Gateway-assisted tower layout input that produces structured inventory for admin review before saving.
 - [ ] Remove the Team Leader count cap and update validation, database enforcement, lists, pagination, and dashboard counts.
+- [ ] Apply white and Payne's Gray across public pages, dashboards, and admin.
+- [ ] Review tower layouts for missing floors, duplicate flat numbers, and inconsistent unit counts using AI Gateway.

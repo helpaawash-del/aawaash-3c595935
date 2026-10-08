@@ -135,6 +135,25 @@ async function assertSuperAdmin(supabase: any, userId: string) {
 
 const flatStatusEnum = z.enum(["available", "reserved", "sold", "not_released", "blocked"]);
 
+/** Admin inventory is read by project ID, including draft/internal projects. */
+export const adminGetProjectInventory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ project_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<ProjectInventory> => {
+    await assertSuperAdmin(context.supabase, context.userId);
+    const { data: project, error: projectError } = await context.supabase.from("projects")
+      .select("id").eq("id", data.project_id).maybeSingle();
+    if (projectError) throw new Error(projectError.message);
+    if (!project) throw new Error("Project not found");
+    const [buildings, floors, flats] = await Promise.all([
+      context.supabase.from("buildings").select("id, code, name, description, total_floors, total_flats, cover_url").eq("project_id", project.id).order("ordering"),
+      context.supabase.from("floors").select("id, building_id, number, name, total_flats, floor_plan_url").eq("project_id", project.id).order("number"),
+      context.supabase.from("flats").select("id, unit_code, building_id, floor_id, area_sqft, bedrooms, bathrooms, balconies, configuration, facing, price, status, booking_status, construction_stage, gallery, floor_plan_url").eq("project_id", project.id).order("unit_code"),
+    ]);
+    for (const result of [buildings, floors, flats]) if (result.error) throw new Error(result.error.message);
+    return { project_id: project.id, buildings: buildings.data as PublicBuilding[] ?? [], floors: floors.data as PublicFloor[] ?? [], flats: flats.data as PublicFlat[] ?? [] };
+  });
+
 export const adminUpdateFlatStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>

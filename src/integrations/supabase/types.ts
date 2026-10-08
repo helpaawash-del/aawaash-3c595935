@@ -35,6 +35,24 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_feature_state: {
+        Row: {
+          id: string
+          message: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          message: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          message?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       asset_audit_log: {
         Row: {
           action: string
