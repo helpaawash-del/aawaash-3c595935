@@ -11,3 +11,6 @@
 
 - Keep the Team Leader cap fixed at three while allowing unlimited members per team, because this is a core business rule.
 - Treat project editor tabs as partial updates so saving one tab never resets fields owned by another tab.
+- Read admin project inventory by authenticated project ID rather than public slug so drafts and newly added floors remain editable.
+- Keep AI layout extraction in server-only SDK modules and return review-only structured data; inventory writes require separate explicit admin actions.
+- Revalidate model-derived layout counts deterministically in shared code so missing floors and duplicate units cannot silently pass review.

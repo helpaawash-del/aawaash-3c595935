@@ -35,7 +35,8 @@ import {
   adminBulkCreateFlats,
   adminListFlatStatusAudit,
 } from "@/lib/project-admin.functions";
-import { getProjectInventory } from "@/lib/inventory.functions";
+import { adminGetProjectInventory } from "@/lib/inventory.functions";
+import { TowerLayoutReview } from "@/components/aawash/admin/TowerLayoutReview";
 import { formatINR } from "@/components/aawash/dashboard-kit";
 import { canEdit, type Role } from "@/lib/permissions";
 import { ImageUploadField, ImageGalleryUploader, Model3DUploadField } from "@/components/aawash/admin/MediaUploaders";
@@ -44,7 +45,13 @@ import { DEFAULT_PROJECT_FLATS, getProjectFlats, type ProjectFlatCard } from "@/
 
 export const Route = createFileRoute("/_authenticated/admin/projects/$id")({
   component: EditProjectPage,
-  head: () => ({ meta: [{ title: "Manage Project — Aawash Admin" }] }),
+  head: () => ({ meta: [
+    { title: "Project Inventory & Layout Review — Aawaash Admin" },
+    { name: "description", content: "Manage project towers, floors, flats, media, and AI-assisted inventory reviews." },
+    { property: "og:title", content: "Project Inventory & Layout Review — Aawaash Admin" },
+    { property: "og:description", content: "Manage towers, floors, flat availability, and tower layout reviews." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
+  ] }),
 });
 
 function EditProjectPage() {
@@ -456,7 +463,7 @@ function BuildingsTab({ projectId }: { projectId: string }) {
   const upsertFlat = useServerFn(adminUpsertFlatFull);
   const deleteFlat = useServerFn(adminDeleteFlat);
   const bulkFlats = useServerFn(adminBulkCreateFlats);
-  const invFn = useServerFn(getProjectInventory);
+  const invFn = useServerFn(adminGetProjectInventory);
 
   const { data: buildings } = useQuery({
     queryKey: ["admin", "buildings", projectId],
@@ -469,6 +476,9 @@ function BuildingsTab({ projectId }: { projectId: string }) {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["admin", "buildings", projectId] }),
       qc.invalidateQueries({ queryKey: ["admin", "project-inv", projectId] }),
+      qc.invalidateQueries({ queryKey: ["admin", "inv-view", projectId] }),
+      qc.invalidateQueries({ queryKey: ["project-inventory"] }),
+      qc.invalidateQueries({ queryKey: ["public-project"] }),
       qc.invalidateQueries({ queryKey: ["admin", "project", projectId] }),
     ]);
   }
@@ -612,12 +622,8 @@ function FloorsPanel({
   const qc = useQueryClient();
   const { data: inv } = useQuery({
     queryKey: ["admin", "project-inv", projectId],
-    // Fetch full inventory via public function — this project is visible to admin regardless
-    queryFn: () => invFn({ data: { slug: "__by_id__" } }).catch(() => null),
+    queryFn: () => invFn({ data: { project_id: projectId } }),
   });
-
-  // Fallback: use direct fetch to buildings/floors/flats via the same public fn — needs slug.
-  // Simpler: reload buildings via listBuildings and refetch floors/flats through supabase client.
 
   const floors = useMemo(() => {
     const arr = (inv as { floors?: Array<{ id: string; building_id: string; number: number; name: string | null; total_flats: number }> } | null)?.floors ?? [];
@@ -690,6 +696,7 @@ function FloorsPanel({
 
   return (
     <div className="border-t border-border bg-background/40 p-4">
+      <TowerLayoutReview buildingId={buildingId} />
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Floors</h4>
         <button onClick={handleAddFloor} className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-foreground">
@@ -699,7 +706,7 @@ function FloorsPanel({
 
       {floors.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-xs text-muted-foreground">
-          Add floors to start creating flats. (Inventory refresh may take a moment after adding.)
+          No floors yet.
         </p>
       ) : (
         <div className="space-y-3">
@@ -776,11 +783,11 @@ const CYCLE: Record<string, "available" | "reserved" | "sold"> = {
 
 function InventoryTab({ projectId, slug }: { projectId: string; slug: string }) {
   const qc = useQueryClient();
-  const invFn = useServerFn(getProjectInventory);
+  const invFn = useServerFn(adminGetProjectInventory);
   const upsertFlat = useServerFn(adminUpsertFlatFull);
   const { data: inv, isLoading } = useQuery({
     queryKey: ["admin", "inv-view", projectId],
-    queryFn: () => invFn({ data: { slug } }),
+    queryFn: () => invFn({ data: { project_id: projectId } }),
   });
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -864,8 +871,7 @@ function InventoryTab({ projectId, slug }: { projectId: string; slug: string }) 
     return (
       <div className="glass-card grid place-items-center rounded-3xl px-8 py-16 text-center">
         <p className="text-sm text-muted-foreground">
-          Inventory grid is only available for projects with public visibility.
-          Set the project visibility to <span className="font-semibold">public</span> in Overview, then reload.
+          Inventory could not be loaded. Please refresh and try again.
         </p>
       </div>
     );

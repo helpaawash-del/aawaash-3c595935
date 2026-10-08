@@ -427,6 +427,7 @@ export const adminUpsertFloor = createServerFn({ method: "POST" })
         .select()
         .maybeSingle();
       if (error) throw new Error(error.message);
+      if (!row) throw new Error("Floor could not be updated.");
       return row;
     }
     const { data: row, error } = await context.supabase
@@ -435,6 +436,7 @@ export const adminUpsertFloor = createServerFn({ method: "POST" })
       .select()
       .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Floor could not be created.");
     return row;
   });
 
@@ -490,10 +492,11 @@ export const adminUpsertFlatFull = createServerFn({ method: "POST" })
 
     const { data: row, error } = await context.supabase
       .from("flats")
-      .insert(data as never)
+      .insert({ ...data, booking_status: "open" } as never)
       .select()
       .maybeSingle();
     if (error) throw new Error(error.message);
+    if (!row) throw new Error("Flat could not be created.");
     return row;
   });
 
