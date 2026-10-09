@@ -16,7 +16,7 @@ import { z } from "zod";
 import { hasUsableFirstName, normalizeFullName } from "@/lib/greeting";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { AAWASH_AUTH_EMAIL_DOMAIN } from "@/lib/auth";
-import { TEAM_LEADER_LIMIT } from "@/lib/team-policy";
+import { compareTeamCodes, nextTeamCode } from "@/lib/team-policy";
 
 type Ctx = {
   supabase: import("@supabase/supabase-js").SupabaseClient;
@@ -34,7 +34,23 @@ async function assertSuperAdmin(ctx: Ctx) {
 
 async function readLimits(admin: import("@supabase/supabase-js").SupabaseClient) {
   void admin;
-  return { maxTeamLeaders: TEAM_LEADER_LIMIT } as const;
+  // Team Leaders are unlimited — `null` means "no cap".
+  return { maxTeamLeaders: null as number | null };
+}
+
+/** Page through a query so large teams never get cut off at 1000 rows. */
+async function fetchAllRows<T>(
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+) {
+  const out: T[] = [];
+  const size = 1000;
+  for (let from = 0; ; from += size) {
+    const { data, error } = await page(from, from + size - 1);
+    if (error) throw new Error(error.message);
+    out.push(...(data ?? []));
+    if (!data || data.length < size) break;
+  }
+  return out;
 }
 
 /* ================================================================== */
@@ -70,7 +86,7 @@ export const listTeamLeaders = createServerFn({ method: "GET" })
       .eq("is_deleted", false)
       .order("letter");
     if (teamsErr) throw new Error(teamsErr.message);
-    const activeTeams = teams ?? [];
+    const activeTeams = [...(teams ?? [])].sort((a, b) => compareTeamCodes(a.letter, b.letter));
 
     const { data: leaderRoles } = await supabaseAdmin
       .from("user_roles")
@@ -97,12 +113,16 @@ export const listTeamLeaders = createServerFn({ method: "GET" })
     const teamIds = (profiles ?? []).map((p) => p.team_id).filter(Boolean) as string[];
     const memberCounts = new Map<string, number>();
     if (teamIds.length) {
-      const { data: members } = await supabaseAdmin
-        .from("profiles")
-        .select("team_id, id")
-        .in("team_id", teamIds)
-        .eq("is_deleted", false);
-      (members ?? []).forEach((m) => {
+      const members = await fetchAllRows<{ team_id: string | null; id: string }>((from, to) =>
+        supabaseAdmin
+          .from("profiles")
+          .select("team_id, id")
+          .in("team_id", teamIds)
+          .eq("is_deleted", false)
+          .order("id")
+          .range(from, to),
+      );
+      members.forEach((m) => {
         if (!m.team_id) return;
         if (leaderIds.includes(m.id)) return;
         memberCounts.set(m.team_id, (memberCounts.get(m.team_id) ?? 0) + 1);
@@ -180,7 +200,8 @@ const createSchema = z.object({
   fullName: fullNameSchema,
   mobile: z.string().regex(/^\d{10}$/, "Mobile must be exactly 10 digits"),
   password: z.string().min(8).max(72),
-  teamId: z.string().uuid(),
+  /** Existing empty team, or omit / "new" to auto-create the next team. */
+  teamId: z.string().uuid().optional().or(z.literal("new")).or(z.literal("")),
   teamName: z.string().trim().min(2).max(80).optional(),
   email: z.string().trim().email().max(160).optional().or(z.literal("")),
   address: z.string().trim().max(400).optional().or(z.literal("")),
@@ -189,6 +210,34 @@ const createSchema = z.object({
   remarks: z.string().trim().max(600).optional().or(z.literal("")),
 });
 
+/** Creates a brand-new team with the next free code (A…Z, AA…). */
+async function createNextTeam(
+  admin: import("@supabase/supabase-js").SupabaseClient,
+  actorId: string,
+  teamName?: string,
+) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data: rows, error } = await admin.from("teams").select("letter");
+    if (error) throw new Error(error.message);
+    const code = nextTeamCode((rows ?? []).map((r: { letter: string }) => r.letter));
+    const { data: team, error: insErr } = await admin
+      .from("teams")
+      .insert({
+        letter: code,
+        name: teamName || `Team ${code}`,
+        description: `Aawash Sales Team ${code}`,
+        created_by: actorId,
+        updated_by: actorId,
+      } as never)
+      .select("id, letter, name, leader_id, is_deleted")
+      .single();
+    if (!insErr && team) return team as { id: string; letter: string; name: string; leader_id: string | null; is_deleted: boolean };
+    // 23505 = another admin grabbed the same code at the same moment → retry.
+    if (insErr && (insErr as { code?: string }).code !== "23505") throw new Error(insErr.message);
+  }
+  throw new Error("Could not create a new team. Please try again.");
+}
+
 export const createTeamLeaderFull = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
@@ -196,27 +245,29 @@ export const createTeamLeaderFull = createServerFn({ method: "POST" })
     await assertSuperAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Enforce configurable Team Leader cap
-    const limits = await readLimits(supabaseAdmin);
-    const { count: currentLeaders } = await supabaseAdmin
-      .from("user_roles")
-      .select("*", { count: "exact", head: true })
-      .eq("role", "team_leader");
-    if ((currentLeaders ?? 0) >= limits.maxTeamLeaders) {
-      throw new Error(
-        `Team Leader cap reached (${limits.maxTeamLeaders}). Increase the limit in System Settings first.`,
-      );
-    }
-
-    // Validate the team & ownership.
-    const { data: team, error: teamErr } = await supabaseAdmin
-      .from("teams")
-      .select("id, letter, name, leader_id, is_deleted")
-      .eq("id", data.teamId)
+    // Team Leaders are unlimited. Duplicate mobile check first so we never
+    // create an empty team for a request that will fail anyway.
+    const { data: earlyDupe } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .or(`mobile_number.eq.${data.mobile},login_id.eq.${data.mobile}`)
       .maybeSingle();
-    if (teamErr) throw new Error(teamErr.message);
-    if (!team || team.is_deleted) throw new Error("Selected team no longer exists.");
-    if (team.leader_id) throw new Error(`Team ${team.letter} already has a Team Leader.`);
+    if (earlyDupe) throw new Error("A user with that mobile number already exists.");
+
+    let team: { id: string; letter: string; name: string; leader_id: string | null; is_deleted: boolean };
+    if (data.teamId && data.teamId !== "new") {
+      const { data: existing, error: teamErr } = await supabaseAdmin
+        .from("teams")
+        .select("id, letter, name, leader_id, is_deleted")
+        .eq("id", data.teamId)
+        .maybeSingle();
+      if (teamErr) throw new Error(teamErr.message);
+      if (!existing || existing.is_deleted) throw new Error("Selected team no longer exists.");
+      if (existing.leader_id) throw new Error(`Team ${existing.letter} already has a Team Leader.`);
+      team = existing;
+    } else {
+      team = await createNextTeam(supabaseAdmin, context.userId, data.teamName);
+    }
 
     // Duplicate checks
     const { data: dupe } = await supabaseAdmin
