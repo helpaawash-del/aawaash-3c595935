@@ -11,8 +11,9 @@
 - [x] Prevent project tab saves from resetting fields owned by other tabs.
 - [x] Remove the non-persisting walkthrough poster upload control.
 - [ ] Complete authenticated admin save/upload/public persistence checks after an active admin signs in to the preview.
-- [ ] Fix project inventory references so newly created floors appear and flats can be added per floor; verify the flow end to end.
-- [ ] Add an AI Gateway-assisted tower layout input that produces structured inventory for admin review before saving.
-- [ ] Remove the Team Leader count cap and update validation, database enforcement, lists, pagination, and dashboard counts.
-- [ ] Apply white and Payne's Gray across public pages, dashboards, and admin.
-- [ ] Review tower layouts for missing floors, duplicate flat numbers, and inconsistent unit counts using AI Gateway.
+- [x] Replace placeholder/public inventory reads with authenticated project-ID reads, including draft projects.
+- [ ] Verify floor creation and flat creation end to end; blocked until an admin signs in to the preview.
+- [x] Add tower layout description/text upload and structured AI review without automatic inventory writes.
+- [ ] Resolve request for unlimited Team Leaders against the mandatory three-leader project rule; cap remains three.
+- [x] Apply white and Payne's Gray across public pages, dashboards, and admin; verify public rendering and persisted CMS colors.
+- [x] Review tower layouts for missing floors, duplicate flat numbers, and inconsistent unit counts using AI Gateway; live request and unit tests passed.

@@ -11,7 +11,7 @@ export const adminReviewTower = createServerFn({ method: "POST" })
     if (role.error || !role.data) throw new Error("Admin only");
     const building = await context.supabase.from("buildings").select("id").eq("id", data.building_id).maybeSingle();
     if (building.error || !building.data) throw new Error("Tower not found");
-    const state = await context.supabase.from("ai_feature_state" as never).select("message").eq("id", "tower-review").maybeSingle();
+    const state = await context.supabase.from("ai_feature_state").select("message").eq("id", "tower-review").maybeSingle();
     if (state.error) throw new Error(state.error.message);
     const blocked = state.data as { message: string } | null;
     if (blocked) return { ok: false as const, status: 403, message: blocked.message };
@@ -29,7 +29,7 @@ export const adminReviewTower = createServerFn({ method: "POST" })
     } catch (error) {
       if (error instanceof TowerReviewError) {
         if (error.denial) {
-          const saved = await context.supabase.from("ai_feature_state" as never).upsert({ id: "tower-review", message: error.message } as never);
+          const saved = await context.supabase.from("ai_feature_state").upsert({ id: "tower-review", message: error.message });
           if (saved.error) throw new Error(saved.error.message);
         }
         return { ok: false as const, status: error.status, message: error.message };
