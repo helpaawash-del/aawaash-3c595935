@@ -17,3 +17,4 @@
 - [ ] Resolve request for unlimited Team Leaders against the mandatory three-leader project rule; cap remains three.
 - [x] Apply white and Payne's Gray across public pages, dashboards, and admin; verify public rendering and persisted CMS colors.
 - [x] Review tower layouts for missing floors, duplicate flat numbers, and inconsistent unit counts using AI Gateway; live request and unit tests passed.
+- [x] Replace Payne's Gray with white and dark Fern green across all theme scopes and saved brand colors; public pages verified without errors.
